@@ -1,24 +1,45 @@
+version: '3.8'
+
 services:
   frontend:
-    image: alpine:latest
-    command: sh -c "apk add --no-cache curl nmap redis postgresql-client && sleep infinity"
+    build: ./frontend
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - frontend-net
-    user: "1000:1000"
 
   api:
-    image: alpine:latest
-    command: sh -c "apk add --no-cache python3 py3-pip && pip install flask redis --break-system-packages && python3 /app/api.py"
+    build: ./api
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
-      - ./api:/app
+      - ./api:/app:ro
     networks:
       - frontend-net
       - backend-net
-    user: "1000:1000"
 
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass supersecret
+    command: redis-server --requirepass "supersecret"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - backend-net
 
@@ -30,6 +51,10 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_password
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - backend-net
 
