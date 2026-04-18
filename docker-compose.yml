@@ -1,0 +1,46 @@
+services:
+  frontend:
+    image: alpine:latest
+    command: sh -c "apk add --no-cache curl nmap redis postgresql-client && sleep infinity"
+    networks:
+      - frontend-net
+    user: "1000:1000"
+
+  api:
+    image: alpine:latest
+    command: sh -c "apk add --no-cache python3 py3-pip && pip install flask redis --break-system-packages && python3 /app/api.py"
+    volumes:
+      - ./api:/app
+    networks:
+      - frontend-net
+      - backend-net
+    user: "1000:1000"
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass supersecret
+    networks:
+      - backend-net
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_DB: users
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    networks:
+      - backend-net
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+
+networks:
+  frontend-net:
+    driver: bridge
+
+  backend-net:
+    driver: bridge
+    internal: true
